@@ -130,7 +130,8 @@ try {
 
   await t("users: PIN-login, foute PIN, AUTH_KEY blijft", async () => {
     const bad = await fetch(`${B}/login`, { method: "POST", body: new URLSearchParams({ user: "Margot", pin: "0000" }), redirect: "manual" });
-    assert.equal(bad.status, 401);
+    assert.equal(bad.status, 200);
+    assert.match(await bad.text(), /Verkeerde code/);
     const r = await fetch(`${B}/login`, { method: "POST", body: new URLSearchParams({ user: "Margot", pin: "2222" }), redirect: "manual" });
     assert.equal(r.status, 303);
     const cookie = r.headers.get("set-cookie").split(";")[0];

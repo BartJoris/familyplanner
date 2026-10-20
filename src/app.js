@@ -136,7 +136,7 @@ function actorName(auth) {
 const delayGuess = () => new Promise((r) => setTimeout(r, 800));
 
 const PUBLIC_FILES = new Set([
-  "/style.css", "/app.js", "/favicon.svg", "/routine.css", "/routine.js",
+  "/style.css", "/app.js", "/favicon.svg", "/favicon.ico", "/routine.css", "/routine.js",
   "/login.js", "/lists.js", "/lists.css",
 ]);
 
@@ -673,15 +673,13 @@ async function loginPage(env, error = "") {
   const err = error ? `<p class="login-err" id="login-err">${escHtml(error)}</p>` : `<p class="login-err hidden" id="login-err"></p>`;
   const userBlock = users.length ? `
 <form method="post" action="/login" class="user-form" id="user-form">
-<p class="login-lead">Wie ben je?</p>
-<input type="hidden" name="user" id="user" value="">
-<div class="login-users">
-${users.map((u) => `<button type="button" class="user-btn" data-user="${escHtml(u.name)}"><span class="ue">${escHtml(u.emoji)}</span>${escHtml(u.name)}</button>`).join("")}
-</div>
+<p class="login-lead">Code, daarna tik op je naam</p>
 <label for="pin">Code</label>
-<input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,8}" maxlength="8" autocomplete="current-password" required>
+<input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,8}" maxlength="8" autocomplete="one-time-code" required autofocus>
 ${err}
-<button type="submit">Inloggen</button>
+<div class="login-users">
+${users.map((u) => `<button type="submit" class="user-btn" name="user" value="${escHtml(u.name)}"><span class="ue">${escHtml(u.emoji)}</span>${escHtml(u.name)}</button>`).join("")}
+</div>
 </form>` : "";
   const keyBlock = users.length ? `
 <details class="login-key">
@@ -706,7 +704,6 @@ ${err}
 ${userBlock}
 ${keyBlock}
 </div>
-${users.length ? `<script src="/login.js"></script>` : ""}
 </body></html>`;
 }
 
@@ -721,6 +718,9 @@ export default {
     try {
       if (url.pathname === "/healthz") return new Response("ok");
       // publieke bestanden zonder gegevens (nodig voor login-pagina en iframes zonder cookie)
+      if (url.pathname === "/favicon.ico") {
+        return env.ASSETS.fetch(new Request(new URL("/favicon.svg", url), req));
+      }
       if (PUBLIC_FILES.has(url.pathname)) return env.ASSETS.fetch(req);
 
       if (url.pathname === "/login") {
@@ -729,13 +729,14 @@ export default {
           const key = String(form.get("key") || "");
           const user = String(form.get("user") || "").trim();
           const pin = String(form.get("pin") || "");
-          const html401 = { status: 401, headers: { "Content-Type": "text/html; charset=utf-8", ...sec } };
+          // Geen 401-HTML: Safari/iOS toont dan een foutpagina i.p.v. het formulier.
+          const htmlOk = { headers: { "Content-Type": "text/html; charset=utf-8", ...sec } };
           if (key) {
             if (env.AUTH_KEY && (await safeEqual(key, env.AUTH_KEY))) {
               return new Response(null, { status: 303, headers: { Location: "/", "Set-Cookie": sessionCookie(await signSession(env, { t: "k" }), req, env) } });
             }
             await delayGuess();
-            return new Response(await loginPage(env, "Verkeerde sleutel."), html401);
+            return new Response(await loginPage(env, "Verkeerde sleutel."), htmlOk);
           }
           if (user || pin) {
             const u = await verifyUserPin(env, user, pin);
@@ -743,9 +744,9 @@ export default {
               return new Response(null, { status: 303, headers: { Location: "/", "Set-Cookie": sessionCookie(await signSession(env, { t: "u", n: u.name }), req, env) } });
             }
             await delayGuess();
-            return new Response(await loginPage(env, "Verkeerde code."), html401);
+            return new Response(await loginPage(env, "Verkeerde code."), htmlOk);
           }
-          return new Response(await loginPage(env, "Kies wie je bent en vul je code in."), html401);
+          return new Response(await loginPage(env, "Kies wie je bent en vul je code in."), htmlOk);
         }
         return new Response(await loginPage(env), { headers: { "Content-Type": "text/html; charset=utf-8", ...sec } });
       }

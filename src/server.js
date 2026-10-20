@@ -53,6 +53,7 @@ env.ASSETS = {
   async fetch(req) {
     let p = decodeURIComponent(new URL(req.url).pathname);
     if (p.endsWith("/")) p += "index.html";
+    if (p === "/favicon.ico") p = "/favicon.svg";
     const file = path.normalize(path.join(PUBLIC, p));
     if (!file.startsWith(PUBLIC + path.sep)) return new Response("Niet gevonden", { status: 404 });
     try {
