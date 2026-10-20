@@ -110,6 +110,7 @@
         el = document.importNode($("#tpl-kid").content, true).firstElementChild;
         wrap.appendChild(el);
         $(".party", el).addEventListener("click", function () { $(".party", el).classList.add("hidden"); });
+        attachReset($(".reset", el), ch, el);
       }
       el.className = "kid " + ch.theme;
       el.style.setProperty("--c", ch.color);
@@ -119,9 +120,71 @@
       $(".goal", el).textContent = ch.goal;
       $(".runner span", el).textContent = ch.runner;
       $(".party-runner span", el).textContent = ch.runner;
+      // knop opnieuw binden aan actuele child (template wordt één keer gekloond)
+      el._resetChild = ch;
       renderSteps(el, ch);
       renderWeek(el, ch);
+      syncResetButton(el, ch);
     });
+  }
+
+  function anyDone(ch) {
+    var steps = stepsOf(S.period);
+    for (var i = 0; i < steps.length; i++) if (isDone(ch.name, S.period, steps[i].id)) return true;
+    return false;
+  }
+
+  function syncResetButton(el, ch) {
+    var btn = $(".reset", el);
+    if (!btn) return;
+    btn.disabled = !anyDone(ch);
+    if (!btn.classList.contains("armed")) btn.textContent = "↺ Opnieuw";
+  }
+
+  function attachReset(btn, ch, el) {
+    var armedAt = 0;
+    btn.addEventListener("click", function () {
+      var child = el._resetChild || ch;
+      if (btn.disabled) return;
+      audio();
+      // twee keer tikken binnen 3 s (voorkomt per ongeluk wissen door de kinderen)
+      if (Date.now() - armedAt > 3000) {
+        armedAt = Date.now();
+        btn.classList.add("armed");
+        btn.textContent = "Zeker? Tik nog eens";
+        clearTimeout(btn._armT);
+        btn._armT = setTimeout(function () {
+          armedAt = 0;
+          btn.classList.remove("armed");
+          syncResetButton(el, el._resetChild || ch);
+        }, 3000);
+        return;
+      }
+      armedAt = 0;
+      clearTimeout(btn._armT);
+      btn.classList.remove("armed");
+      btn.textContent = "↺ Opnieuw";
+      resetChild(child, el);
+    });
+  }
+
+  function resetChild(ch, el) {
+    var k = "reset:" + ch.name + S.period;
+    if (S.busy[k]) return;
+    S.busy[k] = true;
+    var st = (S.data.state[ch.name] = S.data.state[ch.name] || {});
+    delete st[S.period];
+    $(".party", el).classList.add("hidden");
+    renderSteps(el, ch);
+    syncResetButton(el, ch);
+    SOUND.undo();
+    api("POST", "/api/routines/reset", { child: ch.name, routine: S.period, date: S.data.date })
+      .then(function (d) {
+        S.data = Object.assign(d, { routines: d.routines });
+        render();
+      })
+      .catch(function () { load(); })
+      .then(function () { delete S.busy[k]; });
   }
 
   function renderSteps(el, ch) {

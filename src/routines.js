@@ -86,6 +86,20 @@ export class RoutineStore {
     return { completedNow: isComplete && !wasComplete };
   }
 
+  /** Wis alle stappen van één kind voor één routine (ochtend of avond) op die dag. */
+  reset(date, child, routine, rcfg) {
+    if (!rcfg.routines[routine]) throw new Error("Onbekende routine");
+    if (!rcfg.children.some((c) => c.name === child)) throw new Error("Onbekend kind");
+    const d = this.data[date];
+    if (d?.[child]?.[routine]) {
+      delete d[child][routine];
+      if (Object.keys(d[child]).length === 0) delete d[child];
+      if (Object.keys(d).length === 0) delete this.data[date];
+      this.save();
+    }
+    return { reset: true };
+  }
+
   isComplete(date, child, routine, rcfg) {
     const steps = rcfg.routines[routine]?.steps || [];
     const r = this.day(date)?.[child]?.[routine] || {};

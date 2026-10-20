@@ -101,6 +101,17 @@ try {
       body: JSON.stringify({ child: "Janne", routine: "morning", step: "vliegen", done: true }) });
     assert.equal(bad.status, 400);
     assert.equal((await fetch(`${B}/routine`, { headers: auth })).status, 200);
+
+    // reset: alle stappen van dit kind voor deze routine wissen
+    await tog("omkleden", true);
+    await tog("ontbijten", true);
+    const reset = await (await fetch(`${B}/api/routines/reset`, { method: "POST", headers: jsonH,
+      body: JSON.stringify({ child: "Janne", routine: "morning" }) })).json();
+    assert.equal(reset.reset, true);
+    assert.deepEqual(reset.state.Janne?.morning || {}, {});
+    const ha2 = await (await fetch(`${B}/api/ha/routines`, { headers: auth })).json();
+    assert.equal(ha2.children.Janne.morning.done, 0);
+    assert.equal(ha2.children.Janne.morning.complete, false);
   });
 
   console.log(`\n${n} API-tests geslaagd`);

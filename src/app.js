@@ -428,6 +428,17 @@ async function apiRoutineToggle(req, env, cfg) {
   return json({ ...routinePayload(date, env, cfg), completedNow: res.completedNow });
 }
 
+async function apiRoutineReset(req, env, cfg) {
+  const b = await req.json();
+  const date = parseDateStr(b.date) ? b.date : todayIn(cfg.tz);
+  try {
+    store(env).reset(date, String(b.child), String(b.routine), cfg.routines);
+  } catch (e) {
+    return json({ error: e.message }, 400);
+  }
+  return json({ ...routinePayload(date, env, cfg), reset: true });
+}
+
 /** Compact voor Home Assistant: per kind per routine hoeveel stappen klaar zijn. */
 async function apiHaRoutines(url, env, cfg) {
   const date = todayIn(cfg.tz);
@@ -507,6 +518,7 @@ export default {
         if (url.pathname === "/api/ha/routines" && req.method === "GET") return await apiHaRoutines(url, env, cfg);
         if (url.pathname === "/api/routines" && req.method === "GET") return await apiRoutines(url, env, cfg);
         if (url.pathname === "/api/routines/toggle" && req.method === "POST") return await apiRoutineToggle(req, env, cfg);
+        if (url.pathname === "/api/routines/reset" && req.method === "POST") return await apiRoutineReset(req, env, cfg);
         if (url.pathname === "/api/events" && req.method === "POST") return await apiCreate(req, env, cfg);
         if (url.pathname === "/api/events" && req.method === "PATCH") return await apiUpdate(req, env, cfg);
         if (url.pathname === "/api/events" && req.method === "DELETE") return await apiDelete(req, env, cfg);

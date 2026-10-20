@@ -37,8 +37,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
   width: 64px; height: 64px; border-radius: 50%; background: #fff; display: grid; place-items: center;
   font-size: 40px; border: 4px solid var(--c); flex: none;
 }
+.who { flex: 1; min-width: 0; }
 .name { margin: 0; font-size: 38px; line-height: 1; color: var(--c); font-weight: 700; letter-spacing: .01em; }
 .progress-text { margin: 4px 0 0; font-size: 17px; font-weight: 600; opacity: .75; }
+.reset {
+  flex: none; align-self: flex-start; border: 2px solid var(--c); background: #fff; color: var(--c);
+  border-radius: 999px; padding: 8px 12px; font-size: 14px; font-weight: 700; opacity: .75;
+}
+.reset:active { transform: scale(.96); }
+.reset.armed { background: var(--c); color: #fff; opacity: 1; animation: bump .4s; }
+.reset:disabled { opacity: .35; }
 
 /* ── baan ── */
 .track { position: relative; height: 68px; border-radius: 34px; flex: none; overflow: hidden; }
