@@ -4,7 +4,7 @@ import { CalDav, CalDavError } from "./caldav.js";
 import { MockCalDav } from "./mock.js";
 import { expandIcs, buildIcs, updateIcs, isRecurringIcs } from "./ics.js";
 import { zonedToUtc, parseDateStr, addDaysStr, mondayOf, todayIn, utcToZoned } from "./time.js";
-import { RoutineStore, routinesConfig } from "./routines.js";
+import { RoutineStore, routinesConfig, stepsFor } from "./routines.js";
 
 const COOKIE = "gp_session";
 const COOKIE_MAX_AGE = 400 * 24 * 3600; // maximum dat browsers toelaten
@@ -447,12 +447,13 @@ async function apiHaRoutines(url, env, cfg) {
   const out = { date, period: currentPeriod(cfg), children: {} };
   for (const ch of rc.children) {
     out.children[ch.name] = {};
-    for (const [key, r] of Object.entries(rc.routines)) {
+    for (const key of Object.keys(rc.routines)) {
+      const steps = stepsFor(rc, ch, key);
       const st = day?.[ch.name]?.[key] || {};
-      const done = r.steps.filter((s) => st[s.id]).length;
+      const done = steps.filter((s) => st[s.id]).length;
       out.children[ch.name][key] = {
-        done, total: r.steps.length, complete: done === r.steps.length,
-        todo: r.steps.filter((s) => !st[s.id]).map((s) => s.label),
+        done, total: steps.length, complete: steps.length > 0 && done === steps.length,
+        todo: steps.filter((s) => !st[s.id]).map((s) => s.label),
       };
     }
   }

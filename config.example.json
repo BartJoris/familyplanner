@@ -58,7 +58,31 @@
           "Hop hop galop!",
           "Wat een kampioen!",
           "Je paardje is fier op jou!"
-        ]
+        ],
+        "steps": {
+          "evening": [
+            {
+              "id": "huiswerk",
+              "label": "Huiswerk",
+              "icon": "📚"
+            },
+            {
+              "id": "omkleden",
+              "label": "Omkleden",
+              "icon": "👕"
+            },
+            {
+              "id": "avondeten",
+              "label": "Avondeten",
+              "icon": "🍝"
+            },
+            {
+              "id": "tanden",
+              "label": "Tanden poetsen",
+              "icon": "🪥"
+            }
+          ]
+        }
       },
       {
         "name": "Otis",

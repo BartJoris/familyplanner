@@ -112,6 +112,16 @@ try {
     const ha2 = await (await fetch(`${B}/api/ha/routines`, { headers: auth })).json();
     assert.equal(ha2.children.Janne.morning.done, 0);
     assert.equal(ha2.children.Janne.morning.complete, false);
+
+    // Janne avond: huiswerk als eerste stap; Otis houdt de standaard 3 stappen
+    assert.deepEqual(ha2.children.Janne.evening.todo, ["Huiswerk", "Omkleden", "Avondeten", "Tanden poetsen"]);
+    assert.deepEqual(ha2.children.Otis.evening.todo, ["Omkleden", "Avondeten", "Tanden poetsen"]);
+    const togE = async (step, done) => (await fetch(`${B}/api/routines/toggle`, { method: "POST", headers: jsonH,
+      body: JSON.stringify({ child: "Janne", routine: "evening", step, done }) })).json();
+    assert.equal((await togE("huiswerk", true)).completedNow, false);
+    const badOtis = await fetch(`${B}/api/routines/toggle`, { method: "POST", headers: jsonH,
+      body: JSON.stringify({ child: "Otis", routine: "evening", step: "huiswerk", done: true }) });
+    assert.equal(badOtis.status, 400);
   });
 
   console.log(`\n${n} API-tests geslaagd`);

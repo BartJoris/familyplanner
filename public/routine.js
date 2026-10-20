@@ -87,7 +87,11 @@
     }).catch(function (e) { console.warn(e); });
   }
 
-  function stepsOf(period) { return S.data.routines[period].steps; }
+  function stepsOf(ch, period) {
+    var own = ch.steps && ch.steps[period];
+    if (own && own.length) return own;
+    return S.data.routines[period].steps;
+  }
   function isDone(child, period, step) {
     var st = S.data.state[child] && S.data.state[child][period];
     return !!(st && st[step]);
@@ -129,7 +133,7 @@
   }
 
   function anyDone(ch) {
-    var steps = stepsOf(S.period);
+    var steps = stepsOf(ch, S.period);
     for (var i = 0; i < steps.length; i++) if (isDone(ch.name, S.period, steps[i].id)) return true;
     return false;
   }
@@ -188,9 +192,10 @@
   }
 
   function renderSteps(el, ch) {
-    var steps = stepsOf(S.period);
+    var steps = stepsOf(ch, S.period);
     var box = $(".steps", el);
-    if (box.dataset.sig !== S.period + steps.length) {
+    var sig = S.period + ":" + steps.map(function (s) { return s.id; }).join(",");
+    if (box.dataset.sig !== sig) {
       box.innerHTML = "";
       steps.forEach(function (s, i) {
         var b = document.createElement("button");
@@ -204,7 +209,7 @@
         attachPress(b, ch);
         box.appendChild(b);
       });
-      box.dataset.sig = S.period + steps.length;
+      box.dataset.sig = sig;
     }
     var done = 0;
     steps.forEach(function (s) {

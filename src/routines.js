@@ -10,6 +10,14 @@ export const DEFAULT_ROUTINES = {
       name: "Janne", theme: "horse", color: "#e8618c", light: "#ffe3ec",
       avatar: "🐴", runner: "🐎", goal: "🥕", reward: "🌹",
       cheer: ["Hop hop galop!", "Wat een kampioen!", "Je paardje is fier op jou!"],
+      steps: {
+        evening: [
+          { id: "huiswerk", label: "Huiswerk", icon: "📚" },
+          { id: "omkleden", label: "Omkleden", icon: "👕" },
+          { id: "avondeten", label: "Avondeten", icon: "🍝" },
+          { id: "tanden", label: "Tanden poetsen", icon: "🪥" },
+        ],
+      },
     },
     {
       name: "Otis", theme: "car", color: "#2f9e57", light: "#e2f6e8",
@@ -47,6 +55,14 @@ export function routinesConfig(cfg) {
   };
 }
 
+/** Stappen voor één kind: optionele override op het kind, anders de gedeelde routine. */
+export function stepsFor(rcfg, child, routine) {
+  const ch = typeof child === "string" ? rcfg.children.find((c) => c.name === child) : child;
+  const own = ch?.steps?.[routine];
+  if (Array.isArray(own) && own.length) return own;
+  return rcfg.routines[routine]?.steps || [];
+}
+
 /* ── opslag ── */
 
 export class RoutineStore {
@@ -73,7 +89,7 @@ export class RoutineStore {
 
   /** Zet een stap aan/uit. Geeft { completedNow } terug als de routine net volledig werd. */
   toggle(date, child, routine, step, done, rcfg) {
-    const steps = rcfg.routines[routine]?.steps || [];
+    const steps = stepsFor(rcfg, child, routine);
     if (!steps.some((s) => s.id === step)) throw new Error("Onbekende stap");
     if (!rcfg.children.some((c) => c.name === child)) throw new Error("Onbekend kind");
     const wasComplete = this.isComplete(date, child, routine, rcfg);
@@ -101,7 +117,7 @@ export class RoutineStore {
   }
 
   isComplete(date, child, routine, rcfg) {
-    const steps = rcfg.routines[routine]?.steps || [];
+    const steps = stepsFor(rcfg, child, routine);
     const r = this.day(date)?.[child]?.[routine] || {};
     return steps.length > 0 && steps.every((s) => r[s.id]);
   }
