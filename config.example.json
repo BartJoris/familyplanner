@@ -1,10 +1,124 @@
 {
-  "calendars": ["Bart en Margot", "Allen thuis"],
-  "people": [
-    { "name": "Bart",   "emoji": "☕", "keywords": ["Bart"],   "default_calendar": "Bart en Margot" },
-    { "name": "Margot", "emoji": "🌼", "keywords": ["Margot"], "default_calendar": "Bart en Margot" },
-    { "name": "Otis",   "emoji": "🐻", "keywords": ["Otis"],   "default_calendar": "Allen thuis" },
-    { "name": "Janne",  "emoji": "🐴", "keywords": ["Janne"],  "default_calendar": "Allen thuis" }
+  "calendars": [
+    "Bart en Margot",
+    "Allen thuis"
   ],
-  "fallback": { "name": "Samen", "emoji": "🍳", "default_calendar": "Bart en Margot" }
+  "people": [
+    {
+      "name": "Bart",
+      "emoji": "☕",
+      "keywords": [
+        "Bart"
+      ],
+      "default_calendar": "Bart en Margot"
+    },
+    {
+      "name": "Margot",
+      "emoji": "🌼",
+      "keywords": [
+        "Margot"
+      ],
+      "default_calendar": "Bart en Margot"
+    },
+    {
+      "name": "Otis",
+      "emoji": "🐻",
+      "keywords": [
+        "Otis"
+      ],
+      "default_calendar": "Allen thuis"
+    },
+    {
+      "name": "Janne",
+      "emoji": "🐴",
+      "keywords": [
+        "Janne"
+      ],
+      "default_calendar": "Allen thuis"
+    }
+  ],
+  "fallback": {
+    "name": "Samen",
+    "emoji": "🍳",
+    "default_calendar": "Bart en Margot"
+  },
+  "routines": {
+    "switch_at": "13:00",
+    "children": [
+      {
+        "name": "Janne",
+        "theme": "horse",
+        "color": "#e8618c",
+        "light": "#ffe3ec",
+        "avatar": "🐴",
+        "runner": "🐎",
+        "goal": "🥕",
+        "reward": "🌹",
+        "cheer": [
+          "Hop hop galop!",
+          "Wat een kampioen!",
+          "Je paardje is fier op jou!"
+        ]
+      },
+      {
+        "name": "Otis",
+        "theme": "car",
+        "color": "#2f9e57",
+        "light": "#e2f6e8",
+        "avatar": "🚗",
+        "runner": "🏎️",
+        "goal": "🏁",
+        "reward": "🏆",
+        "cheer": [
+          "Vroem vroem, gewonnen!",
+          "Wat een racer!",
+          "Volle gas, Otis!"
+        ]
+      }
+    ],
+    "routines": {
+      "morning": {
+        "label": "Ochtend",
+        "icon": "☀️",
+        "steps": [
+          {
+            "id": "omkleden",
+            "label": "Omkleden",
+            "icon": "👕"
+          },
+          {
+            "id": "ontbijten",
+            "label": "Ontbijten",
+            "icon": "🥣"
+          },
+          {
+            "id": "schoenen",
+            "label": "Schoenen",
+            "icon": "👟"
+          }
+        ]
+      },
+      "evening": {
+        "label": "Avond",
+        "icon": "🌙",
+        "steps": [
+          {
+            "id": "omkleden",
+            "label": "Omkleden",
+            "icon": "👕"
+          },
+          {
+            "id": "avondeten",
+            "label": "Avondeten",
+            "icon": "🍝"
+          },
+          {
+            "id": "tanden",
+            "label": "Tanden poetsen",
+            "icon": "🪥"
+          }
+        ]
+      }
+    }
+  }
 }

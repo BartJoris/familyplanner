@@ -3,7 +3,8 @@ FROM docker.io/library/node:22-alpine
 
 ENV NODE_ENV=production \
     PORT=3000 \
-    CONFIG_FILE=/config/config.json
+    CONFIG_FILE=/config/config.json \
+    DATA_DIR=/data
 
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -11,6 +12,8 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 COPY src ./src
 COPY public ./public
+RUN mkdir -p /data && chown node:node /data
+VOLUME /data
 
 USER node
 EXPOSE 3000

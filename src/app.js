@@ -3,7 +3,8 @@
 import { CalDav, CalDavError } from "./caldav.js";
 import { MockCalDav } from "./mock.js";
 import { expandIcs, buildIcs, updateIcs, isRecurringIcs } from "./ics.js";
-import { zonedToUtc, parseDateStr, addDaysStr, mondayOf, todayIn } from "./time.js";
+import { zonedToUtc, parseDateStr, addDaysStr, mondayOf, todayIn, utcToZoned } from "./time.js";
+import { RoutineStore, routinesConfig } from "./routines.js";
 
 const COOKIE = "gp_session";
 const COOKIE_MAX_AGE = 400 * 24 * 3600; // maximum dat browsers toelaten
@@ -34,7 +35,7 @@ function getConfig(env) {
   }));
   const fallback = cfg.fallback ? { ...cfg.fallback, default_calendar: cfg.fallback.default_calendar || (cfg.calendars || [])[0] } : null;
   const calendars = [...new Set([...(cfg.calendars || []), ...people.flatMap((p) => p.calendars)])];
-  return { people, fallback, calendars, tz: env.TIMEZONE || "Europe/Brussels" };
+  return { people, fallback, calendars, tz: env.TIMEZONE || "Europe/Brussels", routines: routinesConfig(cfg) };
 }
 
 /* ───────────── auth ───────────── */
@@ -376,6 +377,77 @@ async function apiDelete(req, env, cfg) {
   return json({ ok: true });
 }
 
+/* ───────────── routines (kinderen) ───────────── */
+
+let routineStore = null;
+const store = (env) => (routineStore ||= new RoutineStore(env.DATA_DIR || null));
+
+function currentPeriod(cfg) {
+  const now = utcToZoned(new Date(), cfg.tz).time;
+  return now >= (cfg.routines.switch_at || "13:00") ? "evening" : "morning";
+}
+
+function routinePayload(date, env, cfg) {
+  const rc = cfg.routines;
+  return {
+    date,
+    today: todayIn(cfg.tz),
+    period: currentPeriod(cfg),
+    children: rc.children,
+    routines: rc.routines,
+    state: store(env).day(date),
+    week: store(env).week(date, rc),
+  };
+}
+
+async function apiRoutines(url, env, cfg) {
+  const q = url.searchParams.get("date");
+  const date = parseDateStr(q) ? q : todayIn(cfg.tz);
+  return json(routinePayload(date, env, cfg));
+}
+
+async function apiRoutineToggle(req, env, cfg) {
+  const b = await req.json();
+  const date = parseDateStr(b.date) ? b.date : todayIn(cfg.tz);
+  let res;
+  try {
+    res = store(env).toggle(date, String(b.child), String(b.routine), String(b.step), !!b.done, cfg.routines);
+  } catch (e) {
+    return json({ error: e.message }, 400);
+  }
+  if (res.completedNow && env.HA_WEBHOOK_URL) {
+    // feestje melden aan Home Assistant (lichtje, geluid…); fouten mogen de kinderen niet storen
+    const routine = cfg.routines.routines[b.routine];
+    fetch(env.HA_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ child: b.child, routine: b.routine, label: routine?.label || b.routine, date }),
+      signal: AbortSignal.timeout(5000),
+    }).catch((e) => console.warn("HA-webhook mislukt:", e.message));
+  }
+  return json({ ...routinePayload(date, env, cfg), completedNow: res.completedNow });
+}
+
+/** Compact voor Home Assistant: per kind per routine hoeveel stappen klaar zijn. */
+async function apiHaRoutines(url, env, cfg) {
+  const date = todayIn(cfg.tz);
+  const rc = cfg.routines;
+  const day = store(env).day(date);
+  const out = { date, period: currentPeriod(cfg), children: {} };
+  for (const ch of rc.children) {
+    out.children[ch.name] = {};
+    for (const [key, r] of Object.entries(rc.routines)) {
+      const st = day?.[ch.name]?.[key] || {};
+      const done = r.steps.filter((s) => st[s.id]).length;
+      out.children[ch.name][key] = {
+        done, total: r.steps.length, complete: done === r.steps.length,
+        todo: r.steps.filter((s) => !st[s.id]).map((s) => s.label),
+      };
+    }
+  }
+  return json(out);
+}
+
 /* ───────────── login-pagina ───────────── */
 
 function loginPage(error = "") {
@@ -402,7 +474,7 @@ export default {
     try {
       if (url.pathname === "/healthz") return new Response("ok");
       // publieke bestanden zonder gegevens (nodig voor login-pagina en iframes zonder cookie)
-      if (["/style.css", "/app.js", "/favicon.svg"].includes(url.pathname)) return env.ASSETS.fetch(req);
+      if (["/style.css", "/app.js", "/favicon.svg", "/routine.css", "/routine.js"].includes(url.pathname)) return env.ASSETS.fetch(req);
 
       if (url.pathname === "/login") {
         if (req.method === "POST") {
@@ -432,6 +504,9 @@ export default {
         }
         if (url.pathname === "/api/week" && req.method === "GET") return await apiWeek(url, env, cfg);
         if (url.pathname === "/api/ha/summary" && req.method === "GET") return await apiHaSummary(url, env, cfg);
+        if (url.pathname === "/api/ha/routines" && req.method === "GET") return await apiHaRoutines(url, env, cfg);
+        if (url.pathname === "/api/routines" && req.method === "GET") return await apiRoutines(url, env, cfg);
+        if (url.pathname === "/api/routines/toggle" && req.method === "POST") return await apiRoutineToggle(req, env, cfg);
         if (url.pathname === "/api/events" && req.method === "POST") return await apiCreate(req, env, cfg);
         if (url.pathname === "/api/events" && req.method === "PATCH") return await apiUpdate(req, env, cfg);
         if (url.pathname === "/api/events" && req.method === "DELETE") return await apiDelete(req, env, cfg);
@@ -440,7 +515,8 @@ export default {
       }
 
       // statische bestanden (index.html, app.js, …)
-      const res = await env.ASSETS.fetch(req);
+      const assetReq = url.pathname === "/routine" ? new Request(new URL("/routine.html", url), req) : req;
+      const res = await env.ASSETS.fetch(assetReq);
       const out = new Response(res.body, res);
       for (const [k, v] of Object.entries(sec)) out.headers.set(k, v);
       out.headers.set("Cache-Control", "no-cache");

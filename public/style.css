@@ -23,6 +23,7 @@ button { font: inherit; cursor: pointer; }
 .nav button.now, .nav button.add { font-size: 14px; font-weight: 600; padding: 0 14px; }
 .nav button.add { background: var(--ink); color: #fff; }
 .nav button:active { transform: scale(.96); }
+.routine-link { display: inline-flex; align-items: center; background: #ffffffb0; color: #33504a; border-radius: 999px; height: 38px; padding: 0 14px; font-size: 14px; font-weight: 600; font-family: var(--round); text-decoration: none; }
 
 .errors { font-family: var(--round); font-size: 13px; color: #9b2c2c; background: #fff2f2; padding: 5px 10px; border-radius: 8px; }
 

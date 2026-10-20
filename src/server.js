@@ -1,10 +1,14 @@
 // Node HTTP-server rond de fetch-handler in app.js (geen frameworks nodig).
+import dns from "node:dns";
 import http from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import handler from "./app.js";
+
+// Homelab: IPv6 naar iCloud CalDAV faalt vaak (ETIMEDOUT); forceer IPv4.
+dns.setDefaultResultOrder("ipv4first");
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PUBLIC = path.join(ROOT, "public");

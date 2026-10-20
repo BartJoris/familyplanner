@@ -21,6 +21,17 @@ Deployment op het homelab: zie `homelab/services/familyplanner`.
 Een nieuwe afspraak via de planner krijgt de naam vooraan in de titel, zodat ze op de iPhone ook klopt.
 Herhalende afspraken worden getoond (↻), maar pas je op de iPhone aan.
 
+## Routines voor de kinderen (`/routine`)
+
+Een speelse pagina waarop Janne (paarden, roos) en Otis (auto's, groen) zelf hun ochtend- en avondroutine afvinken:
+
+- **Ochtend:** omkleden, ontbijten, schoenen. **Avond:** omkleden, avondeten, tanden poetsen. Na `switch_at` (13u) toont de pagina vanzelf de avondroutine.
+- Elke taak heeft een groot icoon. Tikken = klaar, met een geluidje en een stempel 🌹 of 🏆. Het paardje of de auto schuift op naar 🥕 of 🏁.
+- Is alles klaar, dan volgen confetti, een galopperend paard of een racende auto en een melodietje. Optioneel gaat er een webhook naar Home Assistant.
+- **Lang drukken (0,7 s)** op een afgevinkte taak maakt die ongedaan. Dat is bedoeld voor de ouders.
+- Onderaan staat de week: een 🌹/🐴 of 🏆/🚗 per voltooide routine.
+- Dagelijkse reset, opgeslagen in `DATA_DIR/routines.json`. Stappen, kleuren en emoji pas je aan onder `routines` in `config.json`.
+
 ## Lokaal draaien
 
 ```bash
@@ -49,6 +60,8 @@ podman run --rm -p 3000:3000 --env-file .env -v ./config.json:/config/config.jso
 | `COOKIE_SECURE` | `auto` (enkel via https), `true` of `false` |
 | `TRUST_PROXY` | `1` achter een reverse proxy die `X-Forwarded-Proto` zet |
 | `MOCK` | `1` = nepdata, geen iCloud nodig |
+| `DATA_DIR` | map voor `routines.json` (standaard `/data` in de container) |
+| `HA_WEBHOOK_URL` | optioneel: Home Assistant-webhook bij een voltooide routine |
 
 `config.json`: zie `config.example.json`.
 
@@ -63,6 +76,9 @@ Authenticatie via `Authorization: Bearer <AUTH_KEY>`.
 | POST | `/api/events` | `{ person, title, date, start, end }` of `{ person, title, date, allDay: true }` (`calendar` optioneel) |
 | PATCH | `/api/events` | `{ href, etag, person, title, date, … }` (niet voor herhalende afspraken) |
 | DELETE | `/api/events` | `{ href, etag }` |
+| GET | `/api/routines?date=` | routines, stand van vandaag en weekoverzicht |
+| POST | `/api/routines/toggle` | `{ child, routine: morning\|evening, step, done }` |
+| GET | `/api/ha/routines` | compact per kind: `done/total/complete/todo` |
 | POST | `/api/refresh` | lijst van agenda's opnieuw ophalen |
 | GET | `/healthz` | gezondheidscheck (zonder login) |
 

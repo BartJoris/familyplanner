@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff7ef">
+  <title>Routines</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="/routine.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="top">
+    <a class="pill link" href="/" id="to-planner">📅 Planner</a>
+    <div class="switch" role="tablist" aria-label="Routine kiezen">
+      <button class="seg" data-period="morning" role="tab">☀️ Ochtend</button>
+      <button class="seg" data-period="evening" role="tab">🌙 Avond</button>
+    </div>
+    <div class="date" id="date"></div>
+  </header>
+
+  <main class="kids" id="kids"></main>
+
+  <template id="tpl-kid">
+    <section class="kid">
+      <div class="kid-head">
+        <div class="avatar"></div>
+        <div class="who">
+          <h1 class="name"></h1>
+          <p class="progress-text"></p>
+        </div>
+      </div>
+      <div class="track">
+        <div class="lane"></div>
+        <div class="goal"></div>
+        <div class="runner"><span></span></div>
+      </div>
+      <div class="steps"></div>
+      <div class="weekrow"></div>
+      <div class="party hidden">
+        <div class="confetti"></div>
+        <div class="party-runner"><span></span></div>
+        <div class="party-text">
+          <div class="party-big"></div>
+          <div class="party-small"></div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <script src="/routine.js"></script>
+</body>
+</html>
