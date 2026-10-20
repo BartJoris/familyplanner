@@ -1,0 +1,16 @@
+{
+  "name": "familyplanner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gezinsweekplanner op basis van iCloud-agenda's (CalDAV), voor een wandtablet en Home Assistant",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "MOCK=1 AUTH_KEY=dev-sleutel-voor-lokaal-testen node --watch src/server.js",
+    "test": "node test/unit.mjs && node test/api.mjs"
+  },
+  "dependencies": {
+    "ical.js": "^2.2.1"
+  }
+}

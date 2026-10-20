@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#cfe5dc">
+  <title>Gezinsplanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Fredoka:wght@500;600&display=swap">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <main class="card">
+    <div class="bar">
+      <div class="status" id="status"></div>
+      <div class="nav">
+        <button class="add" id="btn-add" aria-label="Afspraak toevoegen">＋ Afspraak</button>
+        <button id="btn-prev" aria-label="Vorige week">‹</button>
+        <button class="now hidden" id="btn-today">Deze week</button>
+        <button id="btn-next" aria-label="Volgende week">›</button>
+      </div>
+    </div>
+    <div class="errors hidden" id="errors"></div>
+    <div class="grid loading" id="grid"></div>
+  </main>
+
+  <div class="overlay hidden" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+    <form class="panel" id="form" autocomplete="off">
+      <h2 id="dlg-title">Nieuwe afspraak</h2>
+      <div class="ro hidden" id="ro-note"></div>
+
+      <div class="field">
+        <span class="lbl">Voor wie</span>
+        <div class="people" id="f-people"></div>
+      </div>
+
+      <label class="field">
+        <span class="lbl">Wat</span>
+        <input id="f-title" type="text" maxlength="200" placeholder="bv. zwemles" required>
+      </label>
+
+      <div class="row">
+        <label class="field grow">
+          <span class="lbl">Dag</span>
+          <input id="f-date" type="date" required>
+        </label>
+        <label class="field toggle">
+          <input id="f-allday" type="checkbox">
+          <span>Hele dag</span>
+        </label>
+      </div>
+
+      <div class="row" id="times">
+        <label class="field grow">
+          <span class="lbl">Van</span>
+          <input id="f-start" type="time" step="300">
+        </label>
+        <label class="field grow">
+          <span class="lbl">Tot</span>
+          <input id="f-end" type="time" step="300">
+        </label>
+      </div>
+      <div class="row hidden" id="enddate-row">
+        <label class="field grow">
+          <span class="lbl">Tot en met</span>
+          <input id="f-enddate" type="date">
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="lbl">Agenda</span>
+        <select id="f-cal"></select>
+      </label>
+
+      <p class="form-err hidden" id="f-err"></p>
+
+      <div class="actions">
+        <button type="button" class="danger hidden" id="f-delete">Verwijderen</button>
+        <span class="spacer"></span>
+        <button type="button" class="ghost" id="f-cancel">Annuleren</button>
+        <button type="submit" class="primary" id="f-save">Opslaan</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

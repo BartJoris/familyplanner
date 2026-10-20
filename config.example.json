@@ -1,0 +1,10 @@
+{
+  "calendars": ["Bart en Margot", "Allen thuis"],
+  "people": [
+    { "name": "Bart",   "emoji": "☕", "keywords": ["Bart"],   "default_calendar": "Bart en Margot" },
+    { "name": "Margot", "emoji": "🌼", "keywords": ["Margot"], "default_calendar": "Bart en Margot" },
+    { "name": "Otis",   "emoji": "🐻", "keywords": ["Otis"],   "default_calendar": "Allen thuis" },
+    { "name": "Janne",  "emoji": "🐴", "keywords": ["Janne"],  "default_calendar": "Allen thuis" }
+  ],
+  "fallback": { "name": "Samen", "emoji": "🍳", "default_calendar": "Bart en Margot" }
+}
