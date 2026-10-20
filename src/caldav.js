@@ -74,13 +74,15 @@ export class CalDav {
       const rt = first(okProps, "resourcetype") || "";
       if (!has(rt, "calendar")) continue;
       const comps = first(okProps, "supported-calendar-component-set");
-      if (comps && !/VEVENT/i.test(comps)) continue;
+      const vevent = !comps || /VEVENT/i.test(comps);
+      const vtodo = !!(comps && /VTODO/i.test(comps));
+      if (!vevent && !vtodo) continue;
       const href = decode(first(r, "href") || "").trim();
       const name = decode(first(okProps, "displayname") || "").trim();
       const color = decode(first(okProps, "calendar-color") || "").trim().slice(0, 7);
       const privs = first(okProps, "current-user-privilege-set") || "";
       const writable = !privs || has(privs, "write") || has(privs, "write-content") || has(privs, "all");
-      cals.push({ name, url: new URL(href, l.base).toString(), color, writable });
+      cals.push({ name, url: new URL(href, l.base).toString(), color, writable, vevent, vtodo });
     }
     return cals;
   }
@@ -112,9 +114,33 @@ export class CalDav {
     return out;
   }
 
+  /** Herinneringen in een VTODO-lijst: [{ href, etag, ics }] */
+  async todos(listUrl) {
+    const body = `<?xml version="1.0" encoding="utf-8"?>
+<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+  <d:prop><d:getetag/><c:calendar-data/></d:prop>
+  <c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VTODO"/></c:comp-filter></c:filter>
+</c:calendar-query>`;
+    const res = await this.req("REPORT", listUrl, { body, depth: 1 });
+    if (res.status !== 207) throw new CalDavError(`REPORT ${res.status}`, 502);
+    const xml = await res.text();
+    const base = res.url || listUrl;
+    const out = [];
+    for (const r of blocks(xml, "response")) {
+      const data = first(r, "calendar-data");
+      if (!data) continue;
+      out.push({
+        href: new URL(decode(first(r, "href") || "").trim(), base).toString(),
+        etag: decode(first(r, "getetag") || "").trim(),
+        ics: decode(data),
+      });
+    }
+    return out;
+  }
+
   async get(url) {
     const res = await this.req("GET", url);
-    if (res.status === 404) throw new CalDavError("Afspraak niet meer gevonden", 404);
+    if (res.status === 404) throw new CalDavError("Item niet meer gevonden", 404);
     if (!res.ok) throw new CalDavError(`GET ${res.status}`, 502);
     return { ics: await res.text(), etag: res.headers.get("ETag") || "" };
   }
@@ -124,14 +150,14 @@ export class CalDav {
     if (create) headers["If-None-Match"] = "*";
     else if (etag) headers["If-Match"] = etag;
     const res = await this.req("PUT", url, { body: ics, headers });
-    if (res.status === 412) throw new CalDavError("Afspraak werd intussen elders gewijzigd. Herlaad en probeer opnieuw.", 409);
+    if (res.status === 412) throw new CalDavError("Werd intussen elders gewijzigd. Herlaad en probeer opnieuw.", 409);
     if (!res.ok) throw new CalDavError(`Opslaan mislukt (${res.status})`, 502);
     return res.headers.get("ETag") || "";
   }
 
   async remove(url, etag) {
     const res = await this.req("DELETE", url, { headers: etag ? { "If-Match": etag } : {} });
-    if (res.status === 412) throw new CalDavError("Afspraak werd intussen elders gewijzigd. Herlaad en probeer opnieuw.", 409);
+    if (res.status === 412) throw new CalDavError("Werd intussen elders gewijzigd. Herlaad en probeer opnieuw.", 409);
     if (!res.ok && res.status !== 404) throw new CalDavError(`Verwijderen mislukt (${res.status})`, 502);
   }
 }

@@ -7,7 +7,7 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "start": "node src/server.js",
-    "dev": "MOCK=1 AUTH_KEY=dev-sleutel-voor-lokaal-testen node --watch src/server.js",
+    "dev": "MOCK=1 AUTH_KEY=dev-sleutel-voor-lokaal-testen USERS='[{\"name\":\"Bart\",\"pin\":\"1111\"},{\"name\":\"Margot\",\"pin\":\"2222\"}]' node --watch src/server.js",
     "test": "node test/unit.mjs && node test/api.mjs"
   },
   "dependencies": {

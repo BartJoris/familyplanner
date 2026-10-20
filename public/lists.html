@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#cfe5dc">
+  <title>Lijsten</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Fredoka:wght@500;600&display=swap">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/lists.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="lists-page">
+  <main class="card lists-card">
+    <div class="bar">
+      <div class="status" id="status"></div>
+      <div class="nav">
+        <a class="nav-link" href="/">Week</a>
+        <a class="nav-link" id="nav-shopping" href="/lists/shopping">Boodschappen</a>
+        <a class="nav-link" id="nav-todo" href="/lists/todo">Niet vergeten</a>
+        <a class="nav-link" href="/routine">Routines</a>
+        <span class="whoami" id="whoami"></span>
+        <a class="nav-link ghost" href="/logout">Uitloggen</a>
+      </div>
+    </div>
+    <p class="sync-line" id="sync"></p>
+    <form class="add-row" id="add-form" autocomplete="off">
+      <label class="sr-only" for="add-title">Nieuw item</label>
+      <input id="add-title" type="text" maxlength="200" placeholder="Iets toevoegen…" required>
+      <button type="submit" class="add">＋</button>
+    </form>
+    <p class="form-err hidden" id="err"></p>
+    <ul class="checklist" id="open"></ul>
+    <ul class="checklist done" id="done"></ul>
+  </main>
+  <script src="/lists.js"></script>
+</body>
+</html>

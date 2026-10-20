@@ -42,6 +42,10 @@
     "emoji": "🍳",
     "default_calendar": "Bart en Margot"
   },
+  "lists": {
+    "shopping": { "label": "Boodschappen", "reminder_list": "Boodschappen" },
+    "todo": { "label": "Niet vergeten", "reminder_list": "Niet vergeten" }
+  },
   "routines": {
     "switch_at": "13:00",
     "children": [

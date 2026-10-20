@@ -338,5 +338,13 @@
     if (!document.hidden && $("dlg").classList.contains("hidden")) load(state.weekStart);
   });
 
+  fetch("/api/me", { credentials: "same-origin", headers: key ? { Authorization: "Bearer " + key } : {} })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (me) {
+      var el = $("whoami");
+      if (el && me && me.name) el.textContent = me.name;
+    })
+    .catch(function () { /* ok */ });
+
   load();
 })();

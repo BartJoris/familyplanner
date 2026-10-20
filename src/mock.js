@@ -1,5 +1,5 @@
 // Nep-CalDAV voor lokaal testen (MOCK=1). Zelfde interface als CalDav.
-import { buildIcs, VTIMEZONE_BRUSSELS } from "./ics.js";
+import { buildIcs, buildTodoIcs, VTIMEZONE_BRUSSELS } from "./ics.js";
 import { CalDavError } from "./caldav.js";
 import { addDaysStr, mondayOf, todayIn } from "./time.js";
 
@@ -35,6 +35,13 @@ function seed(tz) {
   add("bart-en-margot", "Etentje bij oma", 6, "12:00", "15:00");
   add("winkel", "Winkel open", 5, "10:00", "18:00");
 
+  const addTodo = (list, title, completed = false) => {
+    const uid = crypto.randomUUID();
+    store.set(`${BASE}${list}/${uid}.ics`, { ics: buildTodoIcs({ uid, title, completed }), etag: `"${uid}-1"` });
+  };
+  addTodo("boodschappen", "Brood");
+  addTodo("niet-vergeten", "Pakket ophalen");
+
   // herhalend: scouts elke zaterdag 14u–17u, met één uitzondering (vorige week verplaatst)
   const uid = "scouts-janne-weekly";
   const ics = [
@@ -65,30 +72,35 @@ export class MockCalDav {
   constructor(tz) { this.tz = tz; seed(tz); }
   async discover() {
     return [
-      { name: "Bart en Margot", url: `${BASE}bart-en-margot/`, color: "#ff2968", writable: true },
-      { name: "Allen thuis", url: `${BASE}allen-thuis/`, color: "#63da38", writable: true },
-      { name: "Winkel", url: `${BASE}winkel/`, color: "#1badf8", writable: true },
+      { name: "Bart en Margot", url: `${BASE}bart-en-margot/`, color: "#ff2968", writable: true, vevent: true, vtodo: false },
+      { name: "Allen thuis", url: `${BASE}allen-thuis/`, color: "#63da38", writable: true, vevent: true, vtodo: false },
+      { name: "Winkel", url: `${BASE}winkel/`, color: "#1badf8", writable: true, vevent: true, vtodo: false },
+      { name: "Boodschappen", url: `${BASE}boodschappen/`, color: "#e8a817", writable: true, vevent: false, vtodo: true },
+      { name: "Niet vergeten", url: `${BASE}niet-vergeten/`, color: "#5b7c99", writable: true, vevent: false, vtodo: true },
     ];
   }
   async events(calUrl) {
     return [...store.entries()].filter(([u]) => u.startsWith(calUrl)).map(([href, v]) => ({ href, ...v }));
   }
+  async todos(listUrl) {
+    return [...store.entries()].filter(([u]) => u.startsWith(listUrl)).map(([href, v]) => ({ href, ...v }));
+  }
   async get(url) {
     const v = store.get(url);
-    if (!v) throw new CalDavError("Afspraak niet meer gevonden", 404);
+    if (!v) throw new CalDavError("Item niet meer gevonden", 404);
     return { ...v };
   }
   async put(url, ics, { etag, create } = {}) {
     const cur = store.get(url);
     if (create && cur) throw new CalDavError("bestaat al", 409);
-    if (!create && etag && cur && cur.etag !== etag) throw new CalDavError("Afspraak werd intussen elders gewijzigd. Herlaad en probeer opnieuw.", 409);
+    if (!create && etag && cur && cur.etag !== etag) throw new CalDavError("Werd intussen elders gewijzigd. Herlaad en probeer opnieuw.", 409);
     const newTag = `"${crypto.randomUUID()}"`;
     store.set(url, { ics, etag: newTag });
     return newTag;
   }
   async remove(url, etag) {
     const cur = store.get(url);
-    if (cur && etag && cur.etag !== etag) throw new CalDavError("Afspraak werd intussen elders gewijzigd. Herlaad en probeer opnieuw.", 409);
+    if (cur && etag && cur.etag !== etag) throw new CalDavError("Werd intussen elders gewijzigd. Herlaad en probeer opnieuw.", 409);
     store.delete(url);
   }
 }

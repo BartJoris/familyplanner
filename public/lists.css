@@ -1,0 +1,26 @@
+body.lists-page { overflow: auto; }
+.lists-card { height: auto; min-height: 100vh; min-height: 100dvh; }
+.sync-line { margin: 0; font-family: var(--round); font-size: 13px; color: #33504a; opacity: .75; }
+.add-row { display: flex; gap: 8px; }
+.add-row input {
+  flex: 1; font: inherit; font-family: var(--round); font-size: 18px;
+  padding: 10px 12px; border: 2px solid #d5e2ee; border-radius: 12px; background: #fff; min-height: 46px;
+}
+.add-row .add { min-width: 46px; height: 46px; font-size: 22px; }
+.checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.checklist.done { margin-top: 10px; opacity: .72; }
+.item {
+  display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 12px;
+  padding: 8px 10px; min-height: 48px; border: 1px solid #d5e2ee;
+}
+.item.is-done .item-title { text-decoration: line-through; opacity: .7; }
+.tick {
+  width: 32px; height: 32px; border-radius: 8px; border: 2px solid var(--ink);
+  background: #fff; color: var(--ink); font-size: 16px; flex: none; padding: 0;
+}
+.item.is-done .tick { background: var(--ink); color: #fff; }
+.item-title { flex: 1; font-size: 20px; min-width: 0; }
+.item-title .by { display: block; font-family: var(--round); font-size: 12px; opacity: .55; }
+.trash { border: none; background: transparent; color: #9b2c2c; font-size: 22px; line-height: 1; padding: 4px 8px; }
+.empty { font-family: var(--round); opacity: .6; padding: 12px 4px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }

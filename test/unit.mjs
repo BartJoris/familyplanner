@@ -1,7 +1,11 @@
 // Snelle tests voor ICS-expansie en tijdzones: node test/unit.mjs
 import assert from "node:assert/strict";
-import { expandIcs, buildIcs, updateIcs, isRecurringIcs, VTIMEZONE_BRUSSELS } from "../src/ics.js";
+import { expandIcs, buildIcs, updateIcs, isRecurringIcs, VTIMEZONE_BRUSSELS, parseTodo, buildTodoIcs, updateTodoIcs } from "../src/ics.js";
 import { zonedToUtc, utcToZoned, mondayOf } from "../src/time.js";
+import { LocalListStore } from "../src/lists.js";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 const TZ = "Europe/Brussels";
 const range = (a, b) => [zonedToUtc(...a, 0, 0, TZ), zonedToUtc(...b, 0, 0, TZ)];
@@ -81,6 +85,30 @@ t("buildIcs → expand terug + updateIcs", () => {
   const [o3] = expandIcs(upd2, ...range([2026, 10, 19], [2026, 10, 26]), TZ);
   assert.equal(o3.startTime, "09:00");
   assert.equal(isRecurringIcs(weekly), true);
+});
+
+t("VTODO bouwen, lezen, afvinken", () => {
+  const ics = buildTodoIcs({ uid: "t1", title: "Melk, 2x", created_by: "Margot" });
+  const todo = parseTodo(ics);
+  assert.equal(todo.uid, "t1");
+  assert.equal(todo.title, "Melk, 2x");
+  assert.equal(todo.completed, false);
+  assert.equal(todo.created_by, "Margot");
+  const done = parseTodo(updateTodoIcs(ics, { completed: true }));
+  assert.equal(done.completed, true);
+  const open = parseTodo(updateTodoIcs(updateTodoIcs(ics, { completed: true }), { completed: false, title: "Brood" }));
+  assert.equal(open.completed, false);
+  assert.equal(open.title, "Brood");
+});
+
+t("lokale lijstopslag", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "fp-lists-"));
+  const store = new LocalListStore(dir);
+  const a = store.add("shopping", "Boter", "Bart");
+  assert.equal(a.title, "Boter");
+  assert.equal(store.patch("shopping", a.id, { completed: true }).completed, true);
+  assert.equal(store.remove("shopping", a.id), true);
+  assert.equal(store.items("shopping").length, 0);
 });
 
 console.log(`\n${n} tests geslaagd`);

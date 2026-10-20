@@ -187,6 +187,69 @@ function dtLines(ev, tz) {
   return [`DTSTART:${icsUtc(zonedToUtc(sy, sm, sd, sh, smi, tz))}`, `DTEND:${icsUtc(zonedToUtc(ey, em, ed, eh, emi, tz))}`];
 }
 
+/* ───────────── VTODO (Reminders) ───────────── */
+
+function todoCompleted(vt) {
+  const status = String(vt.getFirstPropertyValue("status") || "").toUpperCase();
+  const percent = Number(vt.getFirstPropertyValue("percent-complete") || 0);
+  return status === "COMPLETED" || percent >= 100 || !!vt.getFirstPropertyValue("completed");
+}
+
+/** Eén VTODO uit een ICS-tekst. */
+export function parseTodo(icsText) {
+  const vcal = new ICAL.Component(ICAL.parse(icsText));
+  const vt = vcal.getFirstSubcomponent("vtodo");
+  if (!vt) return null;
+  return {
+    uid: String(vt.getFirstPropertyValue("uid") || ""),
+    title: String(vt.getFirstPropertyValue("summary") || ""),
+    completed: todoCompleted(vt),
+    created_by: String(vt.getFirstPropertyValue("x-gezinsplanner-by") || ""),
+  };
+}
+
+/** Nieuwe ICS voor één herinnering. */
+export function buildTodoIcs({ uid, title, completed = false, created_by = "" }) {
+  const now = icsUtc(new Date());
+  const lines = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Gezinsplanner//NL", "CALSCALE:GREGORIAN",
+    "BEGIN:VTODO", `UID:${uid}`, `DTSTAMP:${now}`, `CREATED:${now}`, `LAST-MODIFIED:${now}`,
+    `SUMMARY:${escText(title)}`,
+  ];
+  if (created_by) lines.push(`X-GEZINSPLANNER-BY:${escText(created_by)}`);
+  if (completed) {
+    lines.push("STATUS:COMPLETED", "PERCENT-COMPLETE:100", `COMPLETED:${now}`);
+  } else {
+    lines.push("STATUS:NEEDS-ACTION", "PERCENT-COMPLETE:0");
+  }
+  lines.push("END:VTODO", "END:VCALENDAR");
+  return lines.map(fold).join("\r\n") + "\r\n";
+}
+
+/** Bestaande VTODO aanpassen: titel en/of afgevinkt. Overige velden blijven. */
+export function updateTodoIcs(icsText, { title, completed } = {}) {
+  const vcal = new ICAL.Component(ICAL.parse(icsText));
+  const vt = vcal.getFirstSubcomponent("vtodo");
+  if (!vt) throw new Error("Geen herinnering in dit bestand.");
+  if (title !== undefined) vt.updatePropertyWithValue("summary", title);
+  if (completed !== undefined) {
+    if (completed) {
+      vt.updatePropertyWithValue("status", "COMPLETED");
+      vt.updatePropertyWithValue("percent-complete", 100);
+      vt.updatePropertyWithValue("completed", ICAL.Time.fromJSDate(new Date(), true));
+    } else {
+      vt.updatePropertyWithValue("status", "NEEDS-ACTION");
+      vt.updatePropertyWithValue("percent-complete", 0);
+      vt.removeAllProperties("completed");
+    }
+  }
+  const nowT = ICAL.Time.fromJSDate(new Date(), true);
+  vt.updatePropertyWithValue("dtstamp", nowT);
+  vt.updatePropertyWithValue("last-modified", nowT.clone());
+  vt.updatePropertyWithValue("sequence", (Number(vt.getFirstPropertyValue("sequence")) || 0) + 1);
+  return vcal.toString().replace(/\r?\n/g, "\r\n") + "\r\n";
+}
+
 /** Bestaande (niet-herhalende) ICS aanpassen: titel en tijden. */
 export function updateIcs(icsText, ev, tz) {
   const vcal = new ICAL.Component(ICAL.parse(icsText));

@@ -10,7 +10,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 const DATA = mkdtempSync(path.join(tmpdir(), "fp-"));
 const srv = spawn(process.execPath, ["src/server.js"], {
-  env: { ...process.env, PORT: String(PORT), MOCK: "1", AUTH_KEY: KEY, LOG_REQUESTS: "0", CONFIG_FILE: "/nonexistent", DATA_DIR: DATA },
+  env: {
+    ...process.env, PORT: String(PORT), MOCK: "1", AUTH_KEY: KEY, LOG_REQUESTS: "0",
+    CONFIG_FILE: "/nonexistent", DATA_DIR: DATA,
+    USERS: JSON.stringify([{ name: "Bart", pin: "1111" }, { name: "Margot", pin: "2222" }]),
+  },
   stdio: ["ignore", "inherit", "inherit"],
 });
 const stop = () => srv.kill("SIGTERM");
@@ -122,6 +126,45 @@ try {
     const badOtis = await fetch(`${B}/api/routines/toggle`, { method: "POST", headers: jsonH,
       body: JSON.stringify({ child: "Otis", routine: "evening", step: "huiswerk", done: true }) });
     assert.equal(badOtis.status, 400);
+  });
+
+  await t("users: PIN-login, foute PIN, AUTH_KEY blijft", async () => {
+    const bad = await fetch(`${B}/login`, { method: "POST", body: new URLSearchParams({ user: "Margot", pin: "0000" }), redirect: "manual" });
+    assert.equal(bad.status, 401);
+    const r = await fetch(`${B}/login`, { method: "POST", body: new URLSearchParams({ user: "Margot", pin: "2222" }), redirect: "manual" });
+    assert.equal(r.status, 303);
+    const cookie = r.headers.get("set-cookie").split(";")[0];
+    const me = await (await fetch(`${B}/api/me`, { headers: { Cookie: cookie } })).json();
+    assert.equal(me.type, "user");
+    assert.equal(me.name, "Margot");
+    assert.equal((await fetch(`${B}/api/week`, { headers: { Cookie: cookie } })).status, 200);
+    assert.equal((await fetch(`${B}/api/week`, { headers: auth })).status, 200);
+  });
+
+  await t("lijsten: toevoegen, afvinken, verwijderen", async () => {
+    const lists = await (await fetch(`${B}/api/lists`, { headers: auth })).json();
+    assert.equal(lists.lists.shopping.label, "Boodschappen");
+    assert.equal(lists.lists.todo.label, "Niet vergeten");
+    assert.ok(["reminders", "local", "mixed"].includes(lists.sync));
+    const add = await fetch(`${B}/api/lists/shopping/items`, { method: "POST", headers: jsonH,
+      body: JSON.stringify({ title: "Melk test" }) });
+    assert.equal(add.status, 201);
+    const created = await add.json();
+    assert.equal(created.item.title, "Melk test");
+    const patchRes = await fetch(`${B}/api/lists/shopping/items`, { method: "PATCH", headers: jsonH,
+      body: JSON.stringify({ id: created.item.id, href: created.item.href, etag: created.item.etag, completed: true }) });
+    assert.equal(patchRes.status, 200);
+    const patched = await patchRes.json();
+    assert.equal(patched.item.completed, true);
+    const del = await fetch(`${B}/api/lists/shopping/items`, { method: "DELETE", headers: jsonH,
+      body: JSON.stringify({ id: patched.item.id, href: patched.item.href, etag: patched.item.etag }) });
+    assert.equal(del.status, 200);
+    const after = await (await fetch(`${B}/api/lists/shopping`, { headers: auth })).json();
+    assert.ok(!after.items.some((x) => x.title === "Melk test"));
+    assert.equal((await fetch(`${B}/lists/shopping`, { headers: auth })).status, 200);
+    const empty = await fetch(`${B}/api/lists/shopping/items`, { method: "POST", headers: jsonH, body: JSON.stringify({ title: "  " }) });
+    assert.equal(empty.status, 400);
+    assert.equal((await fetch(`${B}/api/lists/nope`, { headers: auth })).status, 404);
   });
 
   console.log(`\n${n} API-tests geslaagd`);

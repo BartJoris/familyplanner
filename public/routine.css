@@ -14,7 +14,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .hidden { display: none !important; }
 
 /* ── bovenbalk ── */
-.top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px 4px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px 4px; flex-wrap: wrap; }
 .pill { background: #fff; border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 15px; color: var(--ink); text-decoration: none; box-shadow: 0 2px 0 #0000000f; }
 .switch { display: flex; background: #fff; border-radius: 999px; padding: 4px; box-shadow: 0 2px 0 #0000000f; }
 .seg { border: none; background: transparent; border-radius: 999px; padding: 8px 18px; font-size: 17px; font-weight: 600; opacity: .55; }
